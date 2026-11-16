@@ -53,6 +53,7 @@ export interface SiteSettings {
   calmMotion: boolean;
   siteTitle: string;
   description: string;
+  seoImageId: string | null;   // share image for link previews (og:image)
   notifyEmail: string;
   links: { label: string; url: string }[];
   cvMediaId: string | null;

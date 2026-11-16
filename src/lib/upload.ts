@@ -3,8 +3,9 @@ import sharp from 'sharp';
 import { store } from './store';
 import { uid } from './content';
 import type { Media } from './types';
+import { MAX_UPLOAD_MB } from './limits';
 
-export const MAX_BYTES = 15 * 1024 * 1024;
+export const MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
 const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'heic', 'heif'];
 const DOC_EXT = ['pdf'];
 
@@ -12,7 +13,7 @@ export class UploadError extends Error {}
 
 /** Resize + convert photos to WebP (incl. iPhone HEIC) and store them; PDFs are stored as-is. */
 export async function processUpload(file: File): Promise<Media> {
-  if (file.size > MAX_BYTES) throw new UploadError(`${file.name} is larger than 15 MB`);
+  if (file.size > MAX_BYTES) throw new UploadError(`${file.name} is larger than ${MAX_UPLOAD_MB} MB`);
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   const isHeic = ext === 'heic' || ext === 'heif' || /heic|heif/.test(file.type);
   const isImage = IMAGE_EXT.includes(ext) || file.type.startsWith('image/');

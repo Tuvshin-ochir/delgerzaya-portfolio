@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import CellExperience from '@/components/site/CellExperience';
 import type { PublicData, PublicSection } from '@/components/site/publicTypes';
 import { getContent, getMedia, visibleSections } from '@/lib/content';
@@ -8,13 +9,26 @@ import './site.css';
 
 export const dynamic = 'force-dynamic';
 
+/** Absolute site address for link previews, taken from the domain the page was requested on. */
+function origin(h: { get(name: string): string | null }): URL | undefined {
+  const host = h.get('x-forwarded-host') ?? h.get('host');
+  const proto = h.get('x-forwarded-proto')?.split(',')[0].trim() || (host?.startsWith('localhost') ? 'http' : 'https');
+  try { return host ? new URL(`${proto}://${host}`) : undefined; } catch { return undefined; }
+}
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { settings } = await getContent();
+  const [{ settings: s }, media, h] = await Promise.all([getContent(), getMedia(), headers()]);
+  const title = s.siteTitle || s.owner, description = s.description;
+  const img = s.seoImageId ? media.find(m => m.id === s.seoImageId && m.kind === 'image') : undefined;
+  const images = img ? [{ url: `/og/${img.id}.jpg`, width: 1200, height: 630, alt: img.alt || title }] : undefined;
   return {
-    title: settings.siteTitle || settings.owner,
-    description: settings.description,
-    openGraph: { title: settings.siteTitle || settings.owner, description: settings.description, type: 'website' },
-    other: { 'theme-color': THEMES[settings.theme]?.bg ?? '#020806' },
+    metadataBase: origin(h),
+    title,
+    description,
+    alternates: { canonical: '/' },
+    openGraph: { title, description, type: 'website', url: '/', siteName: s.owner, images },
+    twitter: { card: img ? 'summary_large_image' : 'summary', title, description, images },
+    other: { 'theme-color': THEMES[s.theme]?.bg ?? '#020806' },
   };
 }
 

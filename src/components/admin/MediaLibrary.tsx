@@ -8,13 +8,14 @@ import { DropZone, uploadFiles, useToast } from './ui';
 
 type Tab = 'all' | 'image' | 'document' | 'unused';
 
-export default function MediaLibrary({ media: initial, usage, tz }: { media: Media[]; usage: Record<string, string[]>; tz: string }) {
+export default function MediaLibrary({ media: initial, usage, tz, disk }: { media: Media[]; usage: Record<string, string[]>; tz: string; disk: { free: number; total: number } | null }) {
   const [media, setMedia] = useState(initial);
   useEffect(() => setMedia(initial), [initial]);
   const [tab, setTab] = useState<Tab>('all');
   const [q, setQ] = useState('');
   const [sel, setSel] = useState<string | null>(initial[0]?.id ?? null);
   const [busy, setBusy] = useState(false);
+  const [prog, setProg] = useState('');
   const [pending, start] = useTransition();
   const router = useRouter();
   const { show, node } = useToast();
@@ -28,8 +29,8 @@ export default function MediaLibrary({ media: initial, usage, tz }: { media: Med
 
   async function onFiles(files: File[]) {
     setBusy(true);
-    const { added, errors } = await uploadFiles(files);
-    setBusy(false);
+    const { added, errors } = await uploadFiles(files, (d, t) => setProg(t > 1 ? `${d} / ${t}` : ''));
+    setBusy(false); setProg('');
     if (added.length) { setMedia(m => [...added, ...m]); setSel(added[0].id); show(`${added.length} file${added.length > 1 ? 's' : ''} uploaded ✓`); router.refresh(); }
     if (errors.length) show(errors.join(' · '), true);
   }
@@ -37,11 +38,11 @@ export default function MediaLibrary({ media: initial, usage, tz }: { media: Med
   return (
     <>
       <div className="hd">
-        <div><h1>Media library</h1><p>{media.length} files · {fmtSize(total)}. Photos are resized and converted to WebP automatically, so phone pictures (even iPhone HEIC) load fast.</p></div>
+        <div><h1>Media library</h1><p>{media.length} files · {fmtSize(total)}{disk ? ` · ${fmtSize(disk.free)} free` : ''}. Photos are resized and converted to WebP automatically, so phone pictures (even iPhone HEIC) load fast.</p></div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 330px', gap: 14, alignItems: 'start' }}>
         <div>
-          <DropZone onFiles={onFiles} busy={busy} />
+          <DropZone onFiles={onFiles} busy={busy} progress={prog} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '12px 0', gap: 10, flexWrap: 'wrap' }}>
             <div className="tabs">
               {([['all', `All ${media.length}`], ['image', `Images ${media.filter(m => m.kind === 'image').length}`], ['document', `Documents ${media.filter(m => m.kind === 'document').length}`], ['unused', `Unused ${media.filter(m => !usage[m.id]?.length).length}`]] as [Tab, string][]).map(([t, l]) => <button key={t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{l}</button>)}
@@ -52,7 +53,7 @@ export default function MediaLibrary({ media: initial, usage, tz }: { media: Med
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))', gap: 12 }}>
             {list.map(m => (
               <button key={m.id} className={`mtile ${sel === m.id ? 'sel' : ''}`} onClick={() => setSel(m.id)}>
-                {m.kind === 'image' ? <div className="im" style={{ backgroundImage: `url(${m.thumb})` }} /> : <div className="im doc">PDF</div>}
+                {m.kind === 'image' ? <img className="im" src={m.thumb} alt="" loading="lazy" decoding="async" /> : <div className="im doc">PDF</div>}
                 <div className="nm"><b>{m.name}</b><small>{fmtSize(m.size)} {usage[m.id]?.length ? <span className="used">{usage[m.id].length > 1 ? `${usage[m.id].length} places` : usage[m.id][0]}</span> : <span className="unused">Unused</span>}</small></div>
               </button>
             ))}

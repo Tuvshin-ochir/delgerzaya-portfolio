@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { saveSection } from '@/app/admin/actions';
 import type { Entry, Media, Section } from '@/lib/types';
-import { DropZone, Switch, uploadFiles, useToast, useUnsaved } from './ui';
+import { MAX_SECTION_PHOTOS } from '@/lib/limits';
+import { DropZone, MediaPicker, Switch, uploadFiles, useToast, useUnsaved } from './ui';
 
 let k = 0;
 const newId = () => `e${Date.now().toString(36)}${(k++).toString(36)}`;
@@ -27,6 +28,7 @@ export default function SectionEditor({ section, media: initialMedia }: { sectio
   const [saved, setSaved] = useState(JSON.stringify(section));
   const [media, setMedia] = useState(initialMedia);
   const [busy, setBusy] = useState(false);
+  const [prog, setProg] = useState('');
   const [picker, setPicker] = useState(false);
   const [dragImg, setDragImg] = useState<number | null>(null);
   const [pending, start] = useTransition();
@@ -51,12 +53,14 @@ export default function SectionEditor({ section, media: initialMedia }: { sectio
 
   async function onFiles(files: File[]) {
     setBusy(true);
-    const { added, errors } = await uploadFiles(files);
-    setBusy(false);
+    const { added, errors } = await uploadFiles(files, (d, t) => setProg(t > 1 ? `${d} / ${t}` : ''));
+    setBusy(false); setProg('');
     if (added.length) {
+      const imgs = added.filter(a => a.kind === 'image').map(a => ({ mediaId: a.id, caption: '' }));
+      const room = MAX_SECTION_PHOTOS - s.images.length;
       setMedia(m => [...added, ...m]);
-      set({ images: [...s.images, ...added.filter(a => a.kind === 'image').map(a => ({ mediaId: a.id, caption: '' }))] });
-      show(`${added.length} file${added.length > 1 ? 's' : ''} uploaded ✓ — press Save`);
+      setS(x => ({ ...x, images: [...x.images, ...imgs].slice(0, MAX_SECTION_PHOTOS) }));   // functional: keeps edits made during a long upload
+      show(imgs.length > room ? `Uploaded ✓ This section holds ${MAX_SECTION_PHOTOS} photos — the rest are in the Media library` : `${added.length} file${added.length > 1 ? 's' : ''} uploaded ✓ — press Save`);
     }
     if (errors.length) show(errors.join(' · '), true);
   }
@@ -156,7 +160,7 @@ export default function SectionEditor({ section, media: initialMedia }: { sectio
           </div>
 
           <div className="panel pad">
-            <div className="ph"><h3>Photos</h3><small>{s.images.length} · drag to reorder · first = cover</small></div>
+            <div className="ph"><h3>Photos</h3><small>{s.images.length}{s.images.length >= MAX_SECTION_PHOTOS ? ' (full)' : ''} · drag to reorder · first = cover</small></div>
             {s.images.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
                 {s.images.map((im, i) => {
@@ -173,7 +177,7 @@ export default function SectionEditor({ section, media: initialMedia }: { sectio
                 })}
               </div>
             )}
-            <DropZone onFiles={onFiles} busy={busy} compact />
+            <DropZone onFiles={onFiles} busy={busy} progress={prog} compact />
             <button className="btn out sm" style={{ marginTop: 8, width: '100%' }} onClick={() => setPicker(true)}>Choose from media library</button>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, fontWeight: 600, fontSize: 13 }}>Show photos as
               <span className="seg"><button className={s.layout === 'strip' ? 'on' : ''} onClick={() => set({ layout: 'strip' })}>Strip</button><button className={s.layout === 'grid' ? 'on' : ''} onClick={() => set({ layout: 'grid' })}>Grid</button></span>
@@ -187,22 +191,12 @@ export default function SectionEditor({ section, media: initialMedia }: { sectio
       </div>
 
       {picker && (
-        <div className="modal" onClick={() => setPicker(false)}>
-          <div className="panel pad" onClick={e => e.stopPropagation()}>
-            <div className="ph"><h3>Choose photos</h3><button className="btn pri sm" onClick={() => setPicker(false)}>Done</button></div>
-            <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-              {media.filter(m => m.kind === 'image').map(m => {
-                const on = s.images.some(i => i.mediaId === m.id);
-                return (
-                  <button key={m.id} className={`mtile ${on ? 'sel' : ''}`} onClick={() => set({ images: on ? s.images.filter(i => i.mediaId !== m.id) : [...s.images, { mediaId: m.id, caption: '' }] })}>
-                    <div className="im" style={{ backgroundImage: `url(${m.thumb})` }} />
-                    <div className="nm"><b>{m.name}</b><small>{on ? <span className="used">✓ Added</span> : <span className="unused">Add</span>}</small></div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        <MediaPicker title="Choose photos" media={media.filter(m => m.kind === 'image')} isOn={m => s.images.some(i => i.mediaId === m.id)} onClose={() => setPicker(false)}
+          onPick={m => {
+            if (s.images.some(i => i.mediaId === m.id)) set({ images: s.images.filter(i => i.mediaId !== m.id) });
+            else if (s.images.length >= MAX_SECTION_PHOTOS) show(`A section holds up to ${MAX_SECTION_PHOTOS} photos`, true);
+            else set({ images: [...s.images, { mediaId: m.id, caption: '' }] });
+          }} />
       )}
       {node}
     </>

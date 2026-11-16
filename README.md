@@ -11,6 +11,7 @@ npm run dev          # http://localhost:3000  ·  admin: http://localhost:3000/a
 
 In `npm run dev` the admin password is `delgerzaya` unless `ADMIN_PASSWORD` is set (see `.env.example`).
 Production (`npm run build && npm start`) **requires** `ADMIN_PASSWORD` (and preferably `ADMIN_SECRET`).
+`ADMIN_PASSWORD` is the starting password: the owner can choose a new one in Admin → Site settings (this signs out other devices). If it's forgotten, set a **new** `ADMIN_PASSWORD` on the server — it replaces the chosen one and signs everyone out.
 
 Content is stored in `./data/*.json`, uploads in `./data/uploads/` (served at `/uploads/*`).
 Delete `./data` to reset to the sample content.
@@ -21,11 +22,11 @@ Delete `./data` to reset to the sample content.
 |---|---|
 | Dashboard | Visitors, drafts, messages, “Getting started” checklist |
 | Sections | Rename, drag to reorder, Published ↔ Draft, use/remove spare organelles (Lysosome, Centrosome, Peroxisome) |
-| Section editor | Organelle name, menu label, title, telemetry, notebook entries, results chart, photos (upload or pick), tags, contact-form toggle |
-| Media library | Upload JPG/PNG/WebP/HEIC/PDF (≤ 15 MB). Photos are auto-rotated, resized to 2400 px and converted to WebP |
+| Section editor | Organelle name, menu label, title, telemetry, notebook entries, results chart, photos (upload or pick, up to 200), tags, contact-form toggle |
+| Media library | Upload JPG/PNG/WebP/HEIC/PDF (≤ 15 MB each, any number at once — sent one by one with progress). Photos are auto-rotated, resized to 2400 px and converted to WebP. Shows free disk space |
 | Messages | Contact-form inbox |
 | Appearance | 4 colour themes, name/tagline/top-bar words, rotation speed, glow, particles, intro |
-| Site settings | Page title & description (SEO), alert email, links, CV PDF |
+| Site settings | SEO title, description and share image (cropped to 1200×630 for link previews) with Google / link-card previews · admin password · alert email · links · CV PDF · storage |
 
 Drafts are hidden from the public menu and their organelle dims; open `/?preview=1` while signed in to see them.
 
@@ -62,5 +63,6 @@ Optional email alerts for new messages: set `RESEND_API_KEY` (and `RESEND_FROM` 
 - `src/app/(site)/page.tsx` — loads content and renders the site
 - `src/app/admin/**` — admin pages, `actions.ts` (all saves), login
 - `src/lib/store.ts` — storage drivers (local / Supabase) · `content.ts` — content helpers · `upload.ts` — image processing
+- `src/lib/password.ts` — admin password (scrypt hash; a change signs out other devices; a new `ADMIN_PASSWORD` resets it) · `src/app/og/` — 1200×630 share images
 - `src/app/fonts/` — self-hosted Unbounded, Manrope, JetBrains Mono (SIL Open Font License, see the `*-OFL.txt` files)
 - `design-proposal/` — the approved design drafts (PDFs + HTML prototypes); kept on the local machine, not committed

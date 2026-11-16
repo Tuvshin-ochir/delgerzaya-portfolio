@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   calmMotion: true,
   siteTitle: 'Delgerzaya — Biotechnology & Food Nutrition',
   description: 'Portfolio of Delgerzaya, a scholarship student in Taiwan studying biotechnology and food nutrition.',
+  seoImageId: null,
   notifyEmail: '',
   links: [
     { label: 'LinkedIn', url: '' },

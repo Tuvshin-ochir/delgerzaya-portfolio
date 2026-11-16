@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { getContent, getMedia, getMessages, getStats, sortedSections } from '@/lib/content';
 import { THEMES, organelleColor } from '@/lib/themes';
 import { fmtDay, fmtSize, hourIn } from '@/lib/format';
+import { passwordInfo } from '@/lib/password';
 
 export default async function Dashboard() {
-  const [c, media, messages, stats] = await Promise.all([getContent(), getMedia(), getMessages(), getStats()]);
+  const [c, media, messages, stats, pw] = await Promise.all([getContent(), getMedia(), getMessages(), getStats(), passwordInfo()]);
   const s = c.settings, T = THEMES[s.theme];
   const inUse = sortedSections(c).filter(x => x.inUse && x.key !== 'home');
   const published = inUse.filter(x => x.status === 'published'), drafts = inUse.filter(x => x.status !== 'published');
@@ -23,6 +24,8 @@ export default async function Dashboard() {
     { done: !!s.cvMediaId, text: 'Upload your CV (PDF) for the download button', href: '/admin/settings', cta: 'Add CV' },
     { done: s.links.some(l => l.url), text: 'Add your links (LinkedIn, Instagram…)', href: '/admin/settings', cta: 'Add links' },
     { done: !!s.notifyEmail, text: 'Set an email for new-message alerts', href: '/admin/settings', cta: 'Set email' },
+    { done: !!s.seoImageId, text: 'Pick a share image for link previews', href: '/admin/settings', cta: 'Pick image' },
+    { done: pw.custom, text: 'Choose your own admin password', href: '/admin/settings', cta: 'Change' },
   ];
   const doneN = checklist.filter(x => x.done).length;
 

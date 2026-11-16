@@ -11,7 +11,7 @@ export default function LoginForm() {
       <div className="fl"><label htmlFor="pw">Password</label><input id="pw" className="in" type="password" name="password" autoComplete="current-password" required autoFocus style={{ height: 48 }} /></div>
       {state?.error && <p className="err">{state.error}</p>}
       <button className="btn pri" style={{ height: 50 }} disabled={pending}>{pending ? 'Signing in…' : 'Sign in →'}</button>
-      <p className="hint">Only the site owner has the password. It is set on the server (ADMIN_PASSWORD).</p>
+      <p className="hint">Forgot the password? The developer can reset it on the server (ADMIN_PASSWORD).</p>
     </form>
   );
 }

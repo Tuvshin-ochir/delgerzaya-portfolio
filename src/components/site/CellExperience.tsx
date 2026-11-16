@@ -244,7 +244,7 @@ export default function CellExperience({ data }: { data: PublicData }) {
           <div className="nbwrap swap" key={s.key}>
             <div className="nb-h">{s.title}</div>
             {s.layout === 'grid' && images.length > 0 ? (
-              <div className="gal">{images.map((im, i) => <button key={i} onClick={() => setLb(i)} style={{ backgroundImage: `url(${im.thumb})` }} aria-label={im.caption || im.alt}>{im.caption && <small>{im.caption}</small>}</button>)}</div>
+              <div className="gal">{images.map((im, i) => <button key={i} onClick={() => setLb(i)} aria-label={im.caption || im.alt}><img src={im.thumb} alt="" loading="lazy" decoding="async" />{im.caption && <small>{im.caption}</small>}</button>)}</div>
             ) : null}
             {s.entries.length > 0 && (
               <div className="log">
@@ -289,6 +289,11 @@ export default function CellExperience({ data }: { data: PublicData }) {
 
 function Lightbox({ images, index, label, onClose, onGo }: { images: PublicImage[]; index: number; label: string; onClose: () => void; onGo: (i: number) => void }) {
   const im = images[index], n = images.length;
+  const strip = useRef<HTMLDivElement>(null);
+  useEffect(() => {   // keep the current thumbnail centred when there are many
+    const s = strip.current, b = s?.children[index] as HTMLElement | undefined;
+    if (s && b) s.scrollTo({ left: b.offsetLeft - (s.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' });
+  }, [index]);
   return (
     <div className="lb" role="dialog" aria-label="Image viewer" onPointerDown={e => e.stopPropagation()}>
       <div className="tag">{label} · media</div>
@@ -299,7 +304,7 @@ function Lightbox({ images, index, label, onClose, onGo }: { images: PublicImage
         <img src={im.url} alt={im.alt || im.caption} />
       </figure>
       <figcaption><b>{im.caption}</b><span>{num(index + 1)} / {num(n)}</span></figcaption>
-      {n > 1 && <div className="strip">{images.map((x, i) => <button key={i} className={i === index ? 'on' : ''} onClick={() => onGo(i)} style={{ backgroundImage: `url(${x.thumb})` }} aria-label={`Image ${i + 1}`} />)}</div>}
+      {n > 1 && <div className="strip" ref={strip}>{images.map((x, i) => <button key={i} className={i === index ? 'on' : ''} onClick={() => onGo(i)} aria-label={`Image ${i + 1}`}><img src={x.thumb} alt="" loading="lazy" decoding="async" /></button>)}</div>}
     </div>
   );
 }

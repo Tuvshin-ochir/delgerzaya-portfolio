@@ -86,3 +86,13 @@ function supa(): Store {
 export function store(): Store {
   return process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY ? supa() : local;
 }
+
+/** Free / total bytes on the disk holding content and uploads (local driver only). */
+export async function diskSpace(): Promise<{ free: number; total: number } | null> {
+  if (store().driver !== 'local') return null;
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    const s = await fs.statfs(DATA_DIR);
+    return { free: s.bavail * s.bsize, total: s.blocks * s.bsize };
+  } catch { return null; }
+}

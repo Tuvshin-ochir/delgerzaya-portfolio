@@ -30,11 +30,21 @@ export async function saveContent(c: Content): Promise<void> {
   await store().setDoc('content', { ...normalize(c), updatedAt: new Date().toISOString() });
 }
 
-export async function updateContent(fn: (c: Content) => void | Content): Promise<Content> {
-  const c = await getContent();
-  const r = fn(c) || c;
-  await saveContent(r);
-  return r;
+const queues = new Map<string, Promise<unknown>>();
+/** Run read-modify-write updates of one document one after another (uploads can arrive in parallel). */
+function serial<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const run = (queues.get(key) ?? Promise.resolve()).then(fn, fn);
+  queues.set(key, run.catch(() => undefined));
+  return run;
+}
+
+export function updateContent(fn: (c: Content) => void | Content): Promise<Content> {
+  return serial('content', async () => {
+    const c = await getContent();
+    const r = fn(c) || c;
+    await saveContent(r);
+    return r;
+  });
 }
 
 export function sortedSections(c: Content): Section[] {
@@ -53,6 +63,14 @@ export async function getMedia(): Promise<Media[]> {
   return m;
 }
 export async function saveMedia(m: Media[]): Promise<void> { await store().setDoc('media', m); }
+export function updateMediaList(fn: (m: Media[]) => void | Media[]): Promise<Media[]> {
+  return serial('media', async () => {
+    const m = await getMedia();
+    const r = fn(m) || m;
+    await saveMedia(r);
+    return r;
+  });
+}
 
 export async function getMessages(): Promise<Message[]> { return (await store().getDoc<Message[]>('messages')) ?? []; }
 export async function saveMessages(m: Message[]): Promise<void> { await store().setDoc('messages', m); }

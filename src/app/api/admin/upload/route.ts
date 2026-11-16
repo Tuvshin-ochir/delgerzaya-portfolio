@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getMedia, saveMedia } from '@/lib/content';
+import { updateMediaList } from '@/lib/content';
 import { isAdmin } from '@/lib/session';
 import { processUpload, UploadError } from '@/lib/upload';
 import type { Media } from '@/lib/types';
@@ -18,6 +18,6 @@ export async function POST(req: Request) {
     try { added.push(await processUpload(f)); }
     catch (e) { errors.push(e instanceof UploadError ? e.message : `${f.name}: upload failed`); if (!(e instanceof UploadError)) console.error('[upload]', e); }
   }
-  if (added.length) { const media = await getMedia(); await saveMedia([...added, ...media]); }
+  if (added.length) await updateMediaList(media => [...added, ...media]);
   return NextResponse.json({ added, errors }, { status: added.length ? 200 : 400 });
 }
