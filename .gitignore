@@ -1,0 +1,17 @@
+# dependencies & build output
+node_modules
+.next
+*.tsbuildinfo
+next-env.d.ts
+
+# local secrets (set real values in Railway → Variables)
+.env
+.env*.local
+
+# local content & uploads (production uses the Railway volume at /data)
+/data/
+
+# design drafts (PDFs + prototypes, ~56 MB) stay on the local machine
+/design-proposal/
+
+.DS_Store
