@@ -45,7 +45,7 @@ ADMIN_PASSWORD=… ADMIN_SECRET=… npm start      # keep ./data on persistent s
 3. Variables: `DATA_DIR=/data`, `ADMIN_PASSWORD=…`, `ADMIN_SECRET=…` (Railway sets `PORT` itself).
 4. Settings → Networking → Generate domain (or add a custom domain).
 
-Railway detects Next.js automatically (`npm run build` → `npm start`); `.railwayignore` keeps `design-proposal/` and local data out of the upload.
+Railway detects Next.js automatically (`npm run build` → `npm start`). This project's Railway service is connected to the GitHub repo, so **every push to `main` deploys automatically**. `railway up` still deploys local, uncommitted changes (`.railwayignore` keeps `design-proposal/` and local data out of that upload).
 
 **Vercel** (read-only file system) — use Supabase for content + files:
 
@@ -62,4 +62,5 @@ Optional email alerts for new messages: set `RESEND_API_KEY` (and `RESEND_FROM` 
 - `src/app/(site)/page.tsx` — loads content and renders the site
 - `src/app/admin/**` — admin pages, `actions.ts` (all saves), login
 - `src/lib/store.ts` — storage drivers (local / Supabase) · `content.ts` — content helpers · `upload.ts` — image processing
-- `design-proposal/` — the approved design drafts (PDFs + HTML prototypes), not part of the build
+- `src/app/fonts/` — self-hosted Unbounded, Manrope, JetBrains Mono (SIL Open Font License, see the `*-OFL.txt` files)
+- `design-proposal/` — the approved design drafts (PDFs + HTML prototypes); kept on the local machine, not committed
